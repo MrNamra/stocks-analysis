@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const authRoutes = require('./routes/authRoutes'); 
 const stockRoutes = require('./routes/stockRoutes');
@@ -41,9 +42,17 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from public directory (frontend build)
+app.use(express.static('public'));
+
 // Routes
 app.get('/', (req, res) => {
-  res.send('✅ Stock backend is live!');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Handle React routing, return all requests to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 app.use('/api/auth', authRoutes);
 app.use('/api/stocks', stockRoutes);
