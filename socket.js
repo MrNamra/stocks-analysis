@@ -1,9 +1,10 @@
 const { verifySocketToken } = require('./middleware/verifySocketToken');
-const { fetchStockPrices } = require('./utils/stockAPI');
-const cache = require('./cache');
-
-const SEBI_TOP_10 = ['RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'HDFCBANK.NS', 'ICICIBANK.NS', 'HINDUNILVR.NS', 'SBIN.NS', 'BHARTIARTL.NS', 'ITC.NS', 'LT.NS'];
-// const SEBI_TOP_10 = ['RELIANCE.NS'];
+const { fetchCurrentPrice, initializeCache } = require('./utils/stockAPI');
+const { getCachedStocksForUser, isCacheValid, getCacheStats } = require('./cache');
+const cacheManager = require('./services/cacheManager');
+const notificationService = require('./services/notificationService');
+const alertService = require('./services/alertService');
+const User = require('./models/User');
 
 function initSocketServer(io) {
   io.use(verifySocketToken); // Auth check on connection
@@ -11,51 +12,140 @@ function initSocketServer(io) {
   io.on('connection', (socket) => {
     console.log('✅ Authenticated socket connected:', socket.id);
 
+    // Register user for notifications
+    notificationService.registerUser(socket.user.id, socket);
+
+    // Send cached data immediately if available
+    sendCachedDataToUser(socket);
+
     socket.on('disconnect', () => {
       console.log('❌ Client disconnected:', socket.id);
+      // Unregister user from notifications
+      notificationService.unregisterUser(socket.user.id);
     });
   });
 
+  // Initialize cache on server start
+  initializeCache();
+
+  // Start cache manager service
+  cacheManager.startUpdateService(300000); // 5 minutes
+
+  // Start automatic alert checking service
+  alertService.start();
+
+  // Send updated data to all connected users when cache updates
   setInterval(async () => {
-    /*
-    const stockData = await Promise.all(SEBI_TOP_10.map(async (symbol) => {
-      const current = await fetchStockPrices(symbol);
-      console.log({current})
-      // const history = await fetchLast50Closes(symbol);
-  
-      // Calculate SMA
-      // const sma = history.reduce((sum, price) => sum + price, 0) / history.length;
-  
-      return {
-        symbol,
-        name: current.name,
-        price: current.price,
-        // last50Closes: history,
-        // sma,
-      };
+    const connectedSockets = await io.fetchSockets();
+    for (const socket of connectedSockets) {
+      await sendCachedDataToUser(socket);
+    }
+  }, 5000); // Send updates every 5 seconds
+}
+
+async function sendCachedDataToUser(socket) {
+  try {
+    // Get user's favorites
+    const user = await User.findById(socket.user.id);
+    const userFavorites = user?.favorites || [];
+
+    // Get cached data for user (favorites or defaults)
+    const cachedStocks = getCachedStocksForUser(userFavorites);
+
+    if (cachedStocks.length > 0) {
+      // Process the cached data to add SMA calculations
+      const processedStocks = cachedStocks.map(stock => {
+        const history = stock.fiftyDayAverage || [];
+        const detailedHistory = stock.detailedHistory || [];
+        const sma = history.length > 0 
+          ? history.reduce((sum, price) => sum + price, 0) / history.length 
+          : 0;
+
+        return {
+          symbol: stock.symbol,
+          name: stock.name,
+          price: stock.price,
+          last50daysAvg: history,
+          detailedHistory: detailedHistory,
+          sma: parseFloat(sma.toFixed(2)),
+          isDefault: stock.isDefault,
+          lastUpdated: stock.lastUpdated
+        };
+      });
+
+      socket.emit('stockUpdate', processedStocks);
+      console.log(`📊 Sent ${processedStocks.length} cached stocks to user ${user?.email || socket.user.id}`);
+    } else {
+      // If no cached data, fetch fresh data
+      console.log('⚠️ No cached data available, fetching fresh data...');
+      await sendUserFavoritesData(socket);
+    }
+  } catch (error) {
+    console.error('Error sending cached data to user:', error);
+    socket.emit('stockUpdate', []);
+  }
+}
+
+
+
+async function sendUserFavoritesData(socket) {
+  try {
+    // Get user's favorites
+    const user = await User.findById(socket.user.id);
+    let stocksToFetch = [];
+
+    if (!user || !user.favorites || user.favorites.length === 0) {
+      // If user has no favorites, show default stocks
+      const { DEFAULT_STOCKS } = require('./cache');
+      stocksToFetch = DEFAULT_STOCKS;
+      console.log(`📊 User ${user?.email || socket.user.id} has no favorites, showing default stocks`);
+    } else {
+      // Use user's favorites
+      stocksToFetch = user.favorites;
+      console.log(`📊 User ${user.email} favorites:`, user.favorites);
+    }
+
+    // Fetch data for stocks
+    const stockData = await Promise.all(stocksToFetch.map(async (symbol) => {
+      try {
+        const current = await fetchCurrentPrice(symbol);
+        const history = current.fiftyDayAverage || [];
+        
+        // Calculate SMA
+        const sma = history.length > 0 
+          ? history.reduce((sum, price) => sum + price, 0) / history.length 
+          : 0;
+
+        return {
+          symbol,
+          name: current.name,
+          price: current.price,
+          last50daysAvg: history,
+          detailedHistory: current.detailedHistory || [],
+          sma: parseFloat(sma.toFixed(2)),
+          isDefault: !user?.favorites?.includes(symbol), // Flag to indicate if this is from default list
+          lastUpdated: current.lastUpdated
+        };
+      } catch (error) {
+        console.error(`Error fetching data for ${symbol}:`, error);
+        return {
+          symbol,
+          name: symbol,
+          price: null,
+          last50daysAvg: [],
+          sma: 0,
+          isDefault: !user?.favorites?.includes(symbol),
+          lastUpdated: Date.now(),
+          error: 'Failed to fetch data'
+        };
+      }
     }));
-    */
-    const stockData = await fetchStockPrices(SEBI_TOP_10)
-    console.log({stockData})
-    // await Promise.all(SEBI_TOP_10.map(async (symbol) => {
-    //   const current = await fetchStockPrices(symbol);
-    //   console.log({current})
-    //   // const history = await fetchLast50Closes(symbol);
-  
-    //   // Calculate SMA
-    //   // const sma = history.reduce((sum, price) => sum + price, 0) / history.length;
-  
-    //   return {
-    //     symbol,
-    //     name: current.name,
-    //     price: current.price,
-    //     // last50Closes: history,
-    //     // sma,
-    //   };
-    // }));
-  
-    io.emit('stockUpdate', stockData);
-  }, 5000);
+
+    socket.emit('stockUpdate', stockData);
+  } catch (error) {
+    console.error('Error sending user favorites data:', error);
+    socket.emit('stockUpdate', []);
+  }
 }
 
 module.exports = { initSocketServer };

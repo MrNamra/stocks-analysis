@@ -5,7 +5,18 @@ const http = require('http');
 const { Server } = require('socket.io');
 const authRoutes = require('./routes/authRoutes'); 
 const stockRoutes = require('./routes/stockRoutes');
+const favoriteRoutes = require('./routes/favoriteRoutes');
+const cacheRoutes = require('./routes/cacheRoutes');
+const positionRoutes = require('./routes/positionRoutes');
+const alertRoutes = require('./routes/alertRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { initSocketServer } = require('./socket');
+
+// Services
+const alertService = require('./services/alertService');
+const notificationService = require('./services/notificationService');
+const notificationQueueService = require('./services/notificationQueueService');
 
 const mongoose = require('mongoose');
 
@@ -36,6 +47,12 @@ app.get('/', (req, res) => {
 });
 app.use('/api/auth', authRoutes);
 app.use('/api/stocks', stockRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/cache', cacheRoutes);
+app.use('/api/positions', positionRoutes);
+app.use('/api/alerts', alertRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // WebSocket
 initSocketServer(io);
@@ -44,4 +61,10 @@ initSocketServer(io);
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
+  // Start background services
+  alertService.start();
+  notificationQueueService.start();
+  
+  console.log('🚀 All background services started');
 });

@@ -1,5 +1,6 @@
 const User = require('../models/User')
 const jwt = require('jsonwebtoken')
+const bcrypt = require('bcryptjs')
 
 const isLogin = async (req, res) => {
     try {
@@ -24,31 +25,71 @@ const isLogin = async (req, res) => {
 
 const register = async (req, res) => {
     try {
-        let data = req.body
-        const user = await User.create({ email : data.email,password: data.password});
+        const { email, password, name } = req.body;
+        
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: 'User already exists' });
+        }
 
-        res.json({ user });
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Create user
+        const user = await User.create({ 
+            email, 
+            password: hashedPassword,
+            name: name || email.split('@')[0] // Use email prefix if no name provided
+        });
+
+        // Remove password from response
+        const userResponse = user.toObject();
+        delete userResponse.password;
+
+        res.json({ 
+            success: true,
+            user: userResponse,
+            message: 'User registered successfully'
+        });
     } catch (error) {
-        console.log({error})
-        res.status(401).json({ error: 'Invalid Data!' });
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Registration failed' });
     }
 }
 
 const login = async (req, res) => {
     try {
+        const { email, password } = req.body;
         
-        let data = req.body
-        const user = await User.findOne({ email : data.email,password: data.password});
-        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET)
-
+        // Find user by email
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        res.json({ user, token });
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Generate token
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+
+        // Remove password from response
+        const userResponse = user.toObject();
+        delete userResponse.password;
+
+        res.json({ 
+            success: true,
+            user: userResponse, 
+            token,
+            message: 'Login successful'
+        });
     } catch (error) {
-        console.log({error})
-        res.status(401).json({ error: 'Invalid Data!' });
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Login failed' });
     }
 }
 
