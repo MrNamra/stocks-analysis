@@ -1,7 +1,10 @@
 const jwt = require('jsonwebtoken');
 
 exports.verifySocketToken = (socket, next) => {
-  const token = socket.handshake.auth?.token;
+  console.log({soc: socket.handshake.auth});
+  
+  // const token = socket.handshake.auth?.token;
+  const token = socket.handshake.query?.token;
 
   if (!token) {
     return next(new Error('Authentication failed'));

@@ -9,7 +9,6 @@ const { initSocketServer } = require('./socket');
 
 const mongoose = require('mongoose');
 
-// 🔁 Add this before server.listen
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true

@@ -21,9 +21,16 @@ async function fetchStockPrices(symbols) {
         const price = quote.regularMarketPrice;
 
         if (price) {
-          cache[symbol] = price;
+          const stockData = {
+            price,
+            fiftyDayAverage: quote.fiftyDayAverage,
+            // you can add more fields from `quote` if needed
+          };
+
+          cache[symbol] = stockData;
           lastFetchTimestamps[symbol] = now;
-          result[symbol] = price;
+
+          result[symbol] = stockData;
         } else {
           result[symbol] = null;
         }
