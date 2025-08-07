@@ -13,10 +13,11 @@ function initSocketServer(io) {
   io.on('connection', (socket) => {
     console.log('🔌 New socket connected:', socket.id);
     
-    // Handle authentication message
+    // Handle authentication message from WebSocket clients
     socket.on('auth', async (data) => {
       try {
         const { token } = data;
+        console.log('🔑 Token received:', token);
         
         if (!token) {
           socket.emit('auth_error', { message: 'No token provided' });
@@ -44,6 +45,45 @@ function initSocketServer(io) {
       } catch (error) {
         console.error('❌ Socket authentication failed:', error.message);
         socket.emit('auth_error', { message: 'Invalid token' });
+      }
+    });
+
+    // Handle WebSocket-style messages (for native WebSocket clients)
+    socket.on('message', async (data) => {
+      try {
+        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+        
+        if (parsedData.type === 'auth') {
+          const { token } = parsedData;
+          console.log('🔑 Token received via message:', token);
+          
+          if (!token) {
+            socket.emit('auth_error', { message: 'No token provided' });
+            return;
+          }
+
+          // Verify token
+          const jwt = require('jsonwebtoken');
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          
+          // Attach user to socket
+          socket.user = decoded;
+          
+          console.log('✅ Socket authenticated for user:', decoded.email || decoded.id);
+          
+          // Register user for notifications
+          notificationService.registerUser(socket.user.id, socket);
+          
+          // Send authentication success
+          socket.emit('auth_success', { message: 'Authentication successful' });
+          
+          // Send cached data immediately if available
+          await sendCachedDataToUser(socket);
+          
+        }
+      } catch (error) {
+        console.error('❌ Socket message handling failed:', error.message);
+        socket.emit('auth_error', { message: 'Invalid message format' });
       }
     });
 

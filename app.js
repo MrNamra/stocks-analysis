@@ -76,5 +76,5 @@ server.listen(PORT, () => {
   alertService.start();
   notificationQueueService.start();
   
-  console.log('🚀 All background services started');
+  console.log('🚀 All background services started on PORT', process.env.PORT);
 });
