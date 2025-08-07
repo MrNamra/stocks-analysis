@@ -7,34 +7,65 @@ const alertService = require('./services/alertService');
 const User = require('./models/User');
 
 function initSocketServer(io) {
-  io.use(verifySocketToken); // Auth check on connection
+  // Remove middleware auth check - we'll handle auth in connection
+  // io.use(verifySocketToken); // Auth check on connection
 
   io.on('connection', (socket) => {
-    console.log('✅ Authenticated socket connected:', socket.id);
+    console.log('🔌 New socket connected:', socket.id);
+    
+    // Handle authentication message
+    socket.on('auth', async (data) => {
+      try {
+        const { token } = data;
+        
+        if (!token) {
+          socket.emit('auth_error', { message: 'No token provided' });
+          return;
+        }
 
-    // Register user for notifications
-    notificationService.registerUser(socket.user.id, socket);
-
-    // Send cached data immediately if available
-    sendCachedDataToUser(socket);
+        // Verify token
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Attach user to socket
+        socket.user = decoded;
+        
+        console.log('✅ Socket authenticated for user:', decoded.email || decoded.id);
+        
+        // Register user for notifications
+        notificationService.registerUser(socket.user.id, socket);
+        
+        // Send authentication success
+        socket.emit('auth_success', { message: 'Authentication successful' });
+        
+        // Send cached data immediately if available
+        await sendCachedDataToUser(socket);
+        
+      } catch (error) {
+        console.error('❌ Socket authentication failed:', error.message);
+        socket.emit('auth_error', { message: 'Invalid token' });
+      }
+    });
 
     socket.on('disconnect', () => {
       console.log('❌ Client disconnected:', socket.id);
-      // Unregister user from notifications
-      notificationService.unregisterUser(socket.user.id);
+      // Unregister user from notifications if authenticated
+      if (socket.user) {
+        notificationService.unregisterUser(socket.user.id);
+      }
     });
   });
 
   // Initialize cache on server start
   initializeCache();
 
-  // Start cache manager service
-  cacheManager.startUpdateService(300000); // 5 minutes
+  // Start cache manager service with faster updates
+  cacheManager.startUpdateService(5000); // 5 seconds for real-time updates
 
   // Start automatic alert checking service
   alertService.start();
 
-  // Send updated data to all connected users when cache updates
+  // Send updated data to all connected users every 5 seconds
   setInterval(async () => {
     const connectedSockets = await io.fetchSockets();
     for (const socket of connectedSockets) {

@@ -7,7 +7,7 @@ class AlertService {
   constructor() {
     this.isRunning = false;
     this.checkInterval = null;
-    this.checkIntervalMs = 60000; // Check every 1 minute
+    this.checkIntervalMs = 5000; // Check every 5 seconds for real-time alerts
   }
 
   // Start the automatic alert checking service
