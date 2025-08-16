@@ -17,7 +17,7 @@ class CacheManager {
   // Start the cache update service
   startUpdateService(intervalMs = 300000) { // Default 5 minutes
     if (this.isRunning) {
-      console.log('⚠️ Cache update service is already running');
+      // console.log('⚠️ Cache update service is already running');
       return;
     }
 
@@ -26,7 +26,7 @@ class CacheManager {
       await this.updateCache();
     }, intervalMs);
 
-    console.log(`🔄 Cache update service started (interval: ${intervalMs / 1000}s)`);
+    // console.log(`🔄 Cache update service started (interval: ${intervalMs / 1000}s)`);
   }
 
   // Stop the cache update service
@@ -35,7 +35,7 @@ class CacheManager {
       clearInterval(this.updateInterval);
       this.updateInterval = null;
       this.isRunning = false;
-      console.log('⏹️ Cache update service stopped');
+      // console.log('⏹️ Cache update service stopped');
     }
   }
 
@@ -43,7 +43,7 @@ class CacheManager {
   async updateCache(symbols = null) {
     try {
       const stocksToUpdate = symbols || DEFAULT_STOCKS;
-      console.log(`🔄 Updating cache for ${stocksToUpdate.length} stocks...`);
+      // console.log(`🔄 Updating cache for ${stocksToUpdate.length} stocks...`);
 
       const promises = stocksToUpdate.map(async (symbol) => {
         try {
@@ -59,11 +59,11 @@ class CacheManager {
       const successCount = results.filter(r => r.success).length;
       const failureCount = results.filter(r => !r.success).length;
 
-      console.log(`✅ Cache update completed: ${successCount} success, ${failureCount} failed`);
+      // console.log(`✅ Cache update completed: ${successCount} success, ${failureCount} failed`);
       
       // If we have very few stocks cached, try to populate with more
       if (successCount < 5) {
-        console.log(`⚠️ Only ${successCount} stocks cached successfully, attempting to populate more...`);
+        // console.log(`⚠️ Only ${successCount} stocks cached successfully, attempting to populate more...`);
         await this.ensureMinimumCache();
       }
       
@@ -121,7 +121,7 @@ class CacheManager {
     try {
       const data = await fetchCurrentPrice(symbol);
       setCachedStock(symbol, data);
-      console.log(`✅ Manually updated ${symbol} in cache`);
+      // console.log(`✅ Manually updated ${symbol} in cache`);
       return { success: true, data };
     } catch (error) {
       console.error(`❌ Failed to manually update ${symbol}:`, error);
@@ -132,7 +132,7 @@ class CacheManager {
   // Clear entire cache
   clear() {
     clearCache();
-    console.log('🗑️ Cache cleared');
+    // console.log('🗑️ Cache cleared');
   }
 
   // Get cache health status

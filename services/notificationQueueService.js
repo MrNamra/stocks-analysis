@@ -53,11 +53,11 @@ class NotificationQueueService {
   // Start the notification queue processor
   start() {
     if (this.isRunning) {
-      console.log('⚠️ Notification queue service is already running');
+      // console.log('⚠️ Notification queue service is already running');
       return;
     }
 
-    console.log('📬 Starting notification queue service...');
+    // console.log('📬 Starting notification queue service...');
     this.isRunning = true;
 
     // Process immediately
@@ -68,17 +68,17 @@ class NotificationQueueService {
       this.processQueue();
     }, this.processIntervalMs);
 
-    console.log(`✅ Notification queue service started (processing every ${this.processIntervalMs / 1000} seconds)`);
+    // console.log(`✅ Notification queue service started (processing every ${this.processIntervalMs / 1000} seconds)`);
   }
 
   // Stop the notification queue processor
   stop() {
     if (!this.isRunning) {
-      console.log('⚠️ Notification queue service is not running');
+      // console.log('⚠️ Notification queue service is not running');
       return;
     }
 
-    console.log('🛑 Stopping notification queue service...');
+    // console.log('🛑 Stopping notification queue service...');
     this.isRunning = false;
 
     if (this.processInterval) {
@@ -86,7 +86,7 @@ class NotificationQueueService {
       this.processInterval = null;
     }
 
-    console.log('✅ Notification queue service stopped');
+    // console.log('✅ Notification queue service stopped');
   }
 
   // Add notification to queue
@@ -101,7 +101,7 @@ class NotificationQueueService {
       });
 
       await notification.save();
-      console.log(`📝 Added notification to queue for user ${userId}: ${title}`);
+      // console.log(`📝 Added notification to queue for user ${userId}: ${title}`);
 
       return notification;
     } catch (error) {
@@ -122,7 +122,7 @@ class NotificationQueueService {
         return;
       }
 
-      console.log(`📬 Processing ${undeliveredNotifications.length} queued notifications...`);
+      // console.log(`📬 Processing ${undeliveredNotifications.length} queued notifications...`);
 
       const notificationService = require('./notificationService');
 
@@ -140,10 +140,10 @@ class NotificationQueueService {
             // Mark as delivered if sent successfully
             notification.isDelivered = true;
             await notification.save();
-            console.log(`✅ Delivered queued notification to ${notification.userId.email}`);
+            // console.log(`✅ Delivered queued notification to ${notification.userId.email}`);
           } else {
             // Keep in queue for next attempt
-            console.log(`⏳ User ${notification.userId.email} not online, keeping notification in queue`);
+            // console.log(`⏳ User ${notification.userId.email} not online, keeping notification in queue`);
           }
         } catch (error) {
           console.error(`❌ Error processing notification for ${notification.userId.email}:`, error);

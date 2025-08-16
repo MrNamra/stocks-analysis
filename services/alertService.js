@@ -13,11 +13,11 @@ class AlertService {
   // Start the automatic alert checking service
   start() {
     if (this.isRunning) {
-      console.log('⚠️ Alert service is already running');
+      // console.log('⚠️ Alert service is already running');
       return;
     }
 
-    console.log('🚨 Starting automatic alert checking service...');
+    // console.log('🚨 Starting automatic alert checking service...');
     this.isRunning = true;
 
     // Check immediately
@@ -28,13 +28,13 @@ class AlertService {
       this.checkAllAlerts();
     }, this.checkIntervalMs);
 
-    console.log(`✅ Alert service started (checking every ${this.checkIntervalMs / 1000} seconds)`);
+    // console.log(`✅ Alert service started (checking every ${this.checkIntervalMs / 1000} seconds)`);
   }
 
   // Stop the automatic alert checking service
   stop() {
     if (!this.isRunning) {
-      console.log('⚠️ Alert service is not running');
+      // console.log('⚠️ Alert service is not running');
       return;
     }
 
@@ -46,13 +46,13 @@ class AlertService {
       this.checkInterval = null;
     }
 
-    console.log('✅ Alert service stopped');
+    // console.log('✅ Alert service stopped');
   }
 
   // Check all active alerts for all users
   async checkAllAlerts() {
     try {
-      console.log('🔍 Checking all active alerts...');
+      // console.log('🔍 Checking all active alerts...');
 
       // Get all active alerts
       const activeAlerts = await StockAlert.find({
@@ -61,11 +61,11 @@ class AlertService {
       }).populate('userId', 'email name');
 
       if (activeAlerts.length === 0) {
-        console.log('📊 No active alerts to check');
+        // console.log('📊 No active alerts to check');
         return;
       }
 
-      console.log(`📊 Checking ${activeAlerts.length} active alerts...`);
+      // console.log(`📊 Checking ${activeAlerts.length} active alerts...`);
 
       // Group alerts by symbol to minimize API calls
       const alertsBySymbol = {};
@@ -85,7 +85,7 @@ class AlertService {
           const stockData = await fetchCurrentPrice(symbol);
           
           if (!stockData || !stockData.price) {
-            console.log(`⚠️ Could not get price for ${symbol}, skipping alerts`);
+            // console.log(`⚠️ Could not get price for ${symbol}, skipping alerts`);
             continue;
           }
 
@@ -181,7 +181,7 @@ class AlertService {
                 user: alert.userId
               });
 
-              console.log(`🚨 Alert triggered: ${message} for user ${alert.userId.email}`);
+              // console.log(`🚨 Alert triggered: ${message} for user ${alert.userId.email}`);
 
               // Add to notification queue for background delivery
               try {
@@ -211,21 +211,21 @@ class AlertService {
 
                 // Send notifications for triggered alerts
           if (triggeredAlerts.length > 0) {
-            console.log(`📢 Sending notifications for ${triggeredAlerts.length} triggered alerts`);
+            // console.log(`📢 Sending notifications for ${triggeredAlerts.length} triggered alerts`);
             
             for (const { alert, currentPrice, user } of triggeredAlerts) {
               try {
                 // Send notification to user (if online)
                 notificationService.sendStockAlert(user._id, alert, currentPrice);
                 
-                console.log(`✅ Notification sent for ${alert.symbol} alert to ${user.email}`);
+                // console.log(`✅ Notification sent for ${alert.symbol} alert to ${user.email}`);
               } catch (error) {
                 console.error(`❌ Error sending notification for ${alert.symbol}:`, error);
               }
             }
           }
 
-      console.log(`✅ Alert check completed: ${triggeredAlerts.length} alerts triggered`);
+      // console.log(`✅ Alert check completed: ${triggeredAlerts.length} alerts triggered`);
 
     } catch (error) {
       console.error('❌ Error in automatic alert checking:', error);

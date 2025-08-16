@@ -17,13 +17,13 @@ class NotificationService {
   // Register a user's socket connection
   registerUser(userId, socket) {
     this.connectedUsers.set(userId.toString(), socket);
-    console.log(`📱 User ${userId} registered for notifications`);
+    // console.log(`📱 User ${userId} registered for notifications`);
   }
 
   // Unregister a user's socket connection
   unregisterUser(userId) {
     this.connectedUsers.delete(userId.toString());
-    console.log(`📱 User ${userId} unregistered from notifications`);
+    // console.log(`📱 User ${userId} unregistered from notifications`);
   }
 
   // Send notification to a specific user
@@ -32,10 +32,10 @@ class NotificationService {
     
     if (socket) {
       socket.emit('notification', notification);
-      console.log(`📢 Notification sent to user ${userId}:`, notification.title);
+      // console.log(`📢 Notification sent to user ${userId}:`, notification.title);
       return true;
     } else {
-      console.log(`⚠️ User ${userId} is not online, notification queued`);
+      // console.log(`⚠️ User ${userId} is not online, notification queued`);
       return false;
     }
   }
@@ -98,7 +98,7 @@ class NotificationService {
       }
     }
 
-    console.log(`📢 Broadcast notification sent to ${sentCount} users`);
+    // console.log(`📢 Broadcast notification sent to ${sentCount} users`);
     return sentCount;
   }
 

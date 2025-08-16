@@ -17,7 +17,7 @@ function initSocketServer(io) {
     socket.on('auth', async (data) => {
       try {
         const { token } = data;
-        console.log('🔑 Token received:', token);
+        // console.log('🔑 Token received:', token);
         
         if (!token) {
           socket.emit('auth_error', { message: 'No token provided' });
@@ -31,7 +31,7 @@ function initSocketServer(io) {
         // Attach user to socket
         socket.user = decoded;
         
-        console.log('✅ Socket authenticated for user:', decoded.email || decoded.id);
+        // console.log('✅ Socket authenticated for user:', decoded.email || decoded.id);
         
         // Register user for notifications
         notificationService.registerUser(socket.user.id, socket);
@@ -55,7 +55,7 @@ function initSocketServer(io) {
         
         if (parsedData.type === 'auth') {
           const { token } = parsedData;
-          console.log('🔑 Token received via message:', token);
+          // console.log('🔑 Token received via message:', token);
           
           if (!token) {
             socket.emit('auth_error', { message: 'No token provided' });
@@ -69,7 +69,7 @@ function initSocketServer(io) {
           // Attach user to socket
           socket.user = decoded;
           
-          console.log('✅ Socket authenticated for user:', decoded.email || decoded.id);
+          // console.log('✅ Socket authenticated for user:', decoded.email || decoded.id);
           
           // Register user for notifications
           notificationService.registerUser(socket.user.id, socket);
@@ -88,7 +88,7 @@ function initSocketServer(io) {
     });
 
     socket.on('disconnect', () => {
-      console.log('❌ Client disconnected:', socket.id);
+      // console.log('❌ Client disconnected:', socket.id);
       // Unregister user from notifications if authenticated
       if (socket.user) {
         notificationService.unregisterUser(socket.user.id);
@@ -145,10 +145,10 @@ async function sendCachedDataToUser(socket) {
       });
 
       socket.emit('stockUpdate', processedStocks);
-      console.log(`📊 Sent ${processedStocks.length} cached stocks to user ${user?.email || socket.user.id}`);
+      // console.log(`📊 Sent ${processedStocks.length} cached stocks to user ${user?.email || socket.user.id}`);
     } else {
       // If no cached data, fetch fresh data
-      console.log('⚠️ No cached data available, fetching fresh data...');
+      // console.log('⚠️ No cached data available, fetching fresh data...');
       await sendUserFavoritesData(socket);
     }
   } catch (error) {
@@ -169,11 +169,11 @@ async function sendUserFavoritesData(socket) {
       // If user has no favorites, show default stocks
       const { DEFAULT_STOCKS } = require('./cache');
       stocksToFetch = DEFAULT_STOCKS;
-      console.log(`📊 User ${user?.email || socket.user.id} has no favorites, showing default stocks`);
+      // console.log(`📊 User ${user?.email || socket.user.id} has no favorites, showing default stocks`);
     } else {
       // Use user's favorites
       stocksToFetch = user.favorites;
-      console.log(`📊 User ${user.email} favorites:`, user.favorites);
+      // console.log(`📊 User ${user.email} favorites:`, user.favorites);
     }
 
     // Fetch data for stocks
