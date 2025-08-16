@@ -6,12 +6,12 @@ async function fetchCurrentPrice(symbol) {
   // Check global cache first
   const cached = getCachedStock(symbol);
   if (cached) {
-    console.log(`📊 Using cached data for ${symbol}`);
+    // console.log(`📊 Using cached data for ${symbol}`);
     return cached;
   }
 
   try {
-    console.log(`🌐 Fetching fresh data for ${symbol} from Yahoo Finance`);
+    // console.log(`🌐 Fetching fresh data for ${symbol} from Yahoo Finance`);
     const quote = await yahooFinance.quote(symbol);
     const price = quote.regularMarketPrice;
     const name = quote.shortName || quote.longName || symbol;
@@ -23,9 +23,9 @@ async function fetchCurrentPrice(symbol) {
       try {
         detailedHistory = await fetchDetailedHistory(symbol);
         historicalData = detailedHistory.map(bar => bar.close);
-        console.log(`📈 Fetched ${detailedHistory.length} days of detailed historical data for ${symbol}`);
+        // console.log(`📈 Fetched ${detailedHistory.length} days of detailed historical data for ${symbol}`);
       } catch (histError) {
-        console.log(`⚠️ Could not fetch detailed historical data for ${symbol}:`, histError.message);
+        // console.log(`⚠️ Could not fetch detailed historical data for ${symbol}:`, histError.message);
         // Use fiftyDayAverage as fallback if available
         if (quote.fiftyDayAverage && Array.isArray(quote.fiftyDayAverage)) {
           historicalData = quote.fiftyDayAverage;
@@ -113,14 +113,14 @@ async function fetchLast50Closes(symbol) {
 
 // Initialize cache with default stocks
 async function initializeStockCache() {
-  console.log('🚀 Initializing global stock cache with default stocks...');
+  // console.log('🚀 Initializing global stock cache with default stocks...');
   initializeCache(); // Mark cache as initialized
   
   const promises = DEFAULT_STOCKS.map(symbol => fetchCurrentPrice(symbol));
   
   try {
     await Promise.all(promises);
-    console.log('✅ Global stock cache initialized successfully');
+    // console.log('✅ Global stock cache initialized successfully');
   } catch (error) {
     console.error('❌ Error initializing cache:', error);
   }

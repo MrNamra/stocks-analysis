@@ -57,7 +57,7 @@ function getCachedStocksForUser(userFavorites = []) {
   // If user has no favorites and we don't have enough cached stocks, 
   // return whatever we have cached plus some defaults
   if (userFavorites.length === 0 && result.length < 5) {
-    console.log(`⚠️ Only ${result.length} stocks cached, fetching more defaults...`);
+    // console.log(`⚠️ Only ${result.length} stocks cached, fetching more defaults...`);
     // Return all cached stocks regardless of whether they're in DEFAULT_STOCKS
     const allCached = getAllCachedStocks();
     return allCached.slice(0, 10); // Return up to 10 stocks
